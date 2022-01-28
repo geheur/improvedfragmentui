@@ -137,6 +137,7 @@ public class FragmentUiPlugin extends Plugin
 			widget.getDynamicChildren()[i + 2].setOnDragCompleteListener((JavaScriptCallback) e -> {
 				if (!lastInput.equals("")) return;
 				Point mouseCanvasPosition = client.getMouseCanvasPosition();
+				if (!widget.getBounds().contains(mouseCanvasPosition.getX(), mouseCanvasPosition.getY())) return;
 				int scrollY = widget.getScrollY();
 				int fragmentIdDraggedOn = (mouseCanvasPosition.getY() - widget.getCanvasLocation().getY() + scrollY) / 42;
 				int fragmentIdDragged = customSort.get(finalI / 9);
@@ -421,7 +422,7 @@ public class FragmentUiPlugin extends Plugin
 	icons.put(3920, -145); // Unholy Warrior
 	icons.put(3919, 12006); // Tactical Duelist
 	icons.put(3903, -508); // Unholy Ranger
-	icons.put(3902, 905); // Bottomless Quiver
+	icons.put(3902, 11216); // Bottomless Quiver
 	icons.put(3881, -509); // Unholy Wizard
 	icons.put(3879, 556); // Arcane Conduit
 	icons.put(3880, 25818); // Thrall Damage
