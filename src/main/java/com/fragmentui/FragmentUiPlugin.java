@@ -6,21 +6,28 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.Point;
 import net.runelite.api.StructComposition;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
@@ -61,24 +68,14 @@ public class FragmentUiPlugin extends Plugin
 	Set<Integer> seenThisClientTick = new HashSet<>();
 	String lastInput = "";
 
+	public static final String GROUP_NAME = "improvedfragmentui";
+
 	Map<Integer, AsyncBufferedImage> setEffectImages = new HashMap<>();
 
 	@Subscribe
-		public void onClientTick(ClientTick e) {
-		// Widget titleBarWidget = client.getWidget(735, 6);
-		// for (int i = 0; i < 7; i++)
-		// {
-		// int slotValue = client.getVarbitValue(13395 + i);
-		// log.info("" + slotValue);
-		// relics.add("" + slotValue);
-		// }
-		// titleBarWidget.setText(titleBarWidget.getText() + " ");
-
+	public void onClientTick(ClientTick e) {
 		Widget equippedFragmentsWidget = client.getWidget(735, 35);
 		if (equippedFragmentsWidget == null || equippedFragmentsWidget.isHidden()) return;
-		// log.info("client tick");
-		// client.getWidget(735, 9).setHidden(true);
-		// client.getWidget(735, 11).setHidden(true);
 		if (config.changeFragmentIcons())
 		{
 			changeFragmentIcons(equippedFragmentsWidget);
@@ -92,17 +89,15 @@ public class FragmentUiPlugin extends Plugin
 		}
 		client.setMenuEntries(entries);
 
-		order = 0;
-		seenThisClientTick.clear();
-
 		if (config.filterFragments())
 		{
 			String input = client.getVarcStrValue(335);
 			if (!input.equals(lastInput))
 			{
+				lastInput = input;
+				updateFilter(lastInput);
 				client.runScript(5751, 48168977, 48168978);
 			}
-			lastInput = input;
 		}
 //	client.runScript(5756, 48168968, 48168979, 48168969);
 	}
@@ -138,6 +133,53 @@ public class FragmentUiPlugin extends Plugin
 		{
 			// log.info("{} {} {} {} {} {} {} {} {} {} {} {} {} {}", i, widget.getDynamicChildren()[i + 7].getText(), widget.getDynamicChildren()[i + 1].getSpriteId(), widget.getDynamicChildren()[i + 1].getSpriteId(), widget.getDynamicChildren()[i + 2].getSpriteId(), widget.getDynamicChildren()[i + 3].getSpriteId(), widget.getDynamicChildren()[i + 4].getSpriteId(), widget.getDynamicChildren()[i + 3].getSpriteId(), widget.getDynamicChildren()[i + 6].getSpriteId());
 			int symbolId = widget.getDynamicChildren()[i + 3].getSpriteId();
+			int finalI = i;
+			widget.getDynamicChildren()[i + 2].setOnDragCompleteListener((JavaScriptCallback) e -> {
+				if (!lastInput.equals("")) return;
+				Point mouseCanvasPosition = client.getMouseCanvasPosition();
+				int scrollY = widget.getScrollY();
+				int fragmentIdDraggedOn = (mouseCanvasPosition.getY() - widget.getCanvasLocation().getY() + scrollY) / 42;
+				int fragmentIdDragged = customSort.get(finalI / 9);
+				// the dragged id must be converted to an index into the custom list, just like the dragged on id is;
+//				for (int i1 = 0; i1 < customSort.size(); i1++)
+//				{
+//					if (customSort.get(i1) == fragmentIdDragged) {
+//						fragmentIdDragged = i1;
+//						break;
+//					}
+//				}
+//				System.out.println("doing swap: " + customSort);
+				int[] reverseCustomSort = new int[53];
+				for (int i1 = 0; i1 < customSort.size(); i1++)
+				{
+					reverseCustomSort[customSort.get(i1)] = i1;
+				}
+//				System.out.println("pre swap (reversed): " + Arrays.asList(reverseCustomSort));
+				int swap = reverseCustomSort[fragmentIdDragged];
+				if (fragmentIdDragged > fragmentIdDraggedOn) {
+					for (int i2 = fragmentIdDragged; i2 > fragmentIdDraggedOn; i2--)
+					{
+						reverseCustomSort[i2] = reverseCustomSort[i2 - 1];
+					}
+				} else {
+					for (int i2 = fragmentIdDragged; i2 < fragmentIdDraggedOn; i2++)
+					{
+						reverseCustomSort[i2] = reverseCustomSort[i2 + 1];
+					}
+				}
+				reverseCustomSort[fragmentIdDraggedOn] = swap;
+//				System.out.println("post swap (reversed): " + Arrays.asList(reverseCustomSort));
+				for (int i1 = 0; i1 < reverseCustomSort.length; i1++)
+				{
+					customSort.set(reverseCustomSort[i1], i1);
+				}
+				updateFilter(lastInput);
+				configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
+				client.runScript(5751, 48168977, 48168978);
+//				System.out.println("done swap: " + customSort);
+//				System.out.println(fragmentIdDraggedOn + " " + fragmentIdDragged);
+//				System.out.println("scrollheight: " + widget.getScrollHeight());
+			});
 			Integer replacementItemId = icons.get(symbolId);
 			if (replacementItemId != null) {
 				widget.getDynamicChildren()[i + 1].setSpriteId(-1);
@@ -152,14 +194,13 @@ public class FragmentUiPlugin extends Plugin
 				}
 				widget.getDynamicChildren()[i + 2].setItemQuantityMode(0);
 			}
-			Widget fragmentBackground = widget.getDynamicChildren()[i + 1];
-			Widget fragmentSymbol = widget.getDynamicChildren()[i + 2];
-
-			// Widget fragmentName = widget.getDynamicChildren()[i + 7];
-			// log.info(fragmentName.getText());
-			// log.info(client.getVarbitValue(14402 + 1 + i));
-			// fragmentName.setText(fragmentName.getText() + " xp: " + client.getVarbitValue(14402 + 1 + i));
 		}
+	}
+
+	List<Integer> customSort = null;
+
+	public int getOrder(int fragmentId) {
+		return filteredSortedList.get(fragmentId - 1);
 	}
 
 	@Subscribe
@@ -173,56 +214,21 @@ public class FragmentUiPlugin extends Plugin
 		}
 
 		if (e.getScriptId() == 5752 && config.filterFragments()) {
-			String input = client.getVarcStrValue(335);
-			// log.info(input);
-			String[] words = input.split(" ");
-
-			int originalListPosition = client.getIntStack()[client.getIntStackSize() - 3];
 			int struct = client.getIntStack()[client.getIntStackSize() - 2];
-			if (seenThisClientTick.contains(struct)) {
-				return;
-			}
-			seenThisClientTick.add(struct);
 
 			StructComposition structComposition = client.getStructComposition(struct);
-			String name = structComposition.getStringValue(1448);
-			String description = structComposition.getStringValue(1449);
-			// log.info("" + struct + " " + name);
-			SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];
-			SetEffect setEffect2 = SetEffect.values()[structComposition.getIntValue(1460) - 1];
-			String setEffect1Name = setEffect1.name;
-			String setEffect2Name = setEffect2.name;
 
-			String relics = configManager.getRSProfileConfiguration("fragmentsearch", "tag_" + input);
-			// log.info("relics: " + relics);
-			if (relics != null) {
-				String[] relicIds = relics.split(" ");
-				boolean found = false;
-				for (int i = 0; i < relicIds.length; i++) {
-					// log.info(Integer.parseInt(relicIds[i]) + " " + (struct - 4038));
-					if (Integer.parseInt(relicIds[i]) == originalListPosition + 1) {
-						client.getIntStack()[client.getIntStackSize() - 1] = 0; // true
-						client.getIntStack()[client.getIntStackSize() - 3] = order;
-						found = true;
-						break;
-					} else {
-						client.getIntStack()[client.getIntStackSize() - 1] = 1; // false
-					}
-				}
-				if (!found) return;
-			} else {
-				for (String word : words) {
-					if (name.toLowerCase().contains(word) || setEffect1Name.toLowerCase().contains(word) || setEffect2Name.toLowerCase().contains(word)) {
-						client.getIntStack()[client.getIntStackSize() - 1] = 0; // true
-						client.getIntStack()[client.getIntStackSize() - 3] = order;
-						break;
-					} else {
-						client.getIntStack()[client.getIntStackSize() - 1] = 1; // false
-						return;
-					}
-				}
-			}
+			int fragmentId = structComposition.getIntValue(1455);
+			int order = getOrder(fragmentId);
+			client.getIntStack()[client.getIntStackSize() - 1] = order == -1 ? 1 : 0;
+			if (order != -1) client.getIntStack()[client.getIntStackSize() - 3] = order;
 
+//			String name = structComposition.getStringValue(1448);
+//			SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];
+//			SetEffect setEffect2 = SetEffect.values()[structComposition.getIntValue(1460) - 1];
+//			String setEffect1Name = setEffect1.name;
+//			String setEffect2Name = setEffect2.name;
+//			int originalListPosition = client.getIntStack()[client.getIntStackSize() - 3];
 //			log.info("{}: ({}, {}), {} {} {} {} {} {} {}", name, setEffect1Name, setEffect2Name,
 //				client.getIntStack()[client.getIntStackSize() - 1],
 //				struct,
@@ -231,7 +237,68 @@ public class FragmentUiPlugin extends Plugin
 //				client.getIntStack()[client.getIntStackSize() - 5],
 //				structComposition.getIntValue(1455)
 //			);
+		}
+	}
 
+	List<Integer> filteredSortedList = new ArrayList<>();
+
+	private void updateFilter(String input)
+	{
+		filteredSortedList.clear();
+		String relics = configManager.getConfiguration("fragmentsearch", "tag_" + input);
+		outer:
+		for (int i = 0; i < customSort.size(); i++)
+		{
+			String[] words = input.split(" ");
+
+			StructComposition structComposition = client.getStructComposition(fragmentIdToStructId.get(i));
+			String name = structComposition.getStringValue(1448);
+			SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];
+			SetEffect setEffect2 = SetEffect.values()[structComposition.getIntValue(1460) - 1];
+			String setEffect1Name = setEffect1.name;
+			String setEffect2Name = setEffect2.name;
+
+			boolean include = false;
+
+			if (relics != null) {
+				String[] relicIds = relics.split(" ");
+				boolean found = false;
+				for (int j = 0; j < relicIds.length; j++) {
+					// log.info(Integer.parseInt(relicIds[j]) + " " + (struct - 4038));
+					if (Integer.parseInt(relicIds[i]) == i + 1) {
+						include = true;
+						break;
+					} else {
+						// do nothing;
+					}
+				}
+				if (!found) continue outer;
+			} else {
+				for (String word : words) {
+					if (name.toLowerCase().contains(word) || setEffect1Name.toLowerCase().contains(word) || setEffect2Name.toLowerCase().contains(word)) {
+						include = true;
+						break;
+					} else {
+						// do nothing;
+					}
+				}
+			}
+
+			filteredSortedList.add(include ? customSort.get(i) : -1);
+		}
+		List<Integer> ascendingFilteredSortedList = IntStream.range(0, 53).mapToObj(i -> i).collect(Collectors.toList());
+		Collections.sort(ascendingFilteredSortedList, (i1, i2) -> {
+			Integer integer1 = filteredSortedList.get(i1);
+			Integer integer2 = filteredSortedList.get(i2);
+			return integer1.compareTo(integer2);
+		});
+		int order = 0;
+		for (int i = 0; i < ascendingFilteredSortedList.size(); i++)
+		{
+			int index = ascendingFilteredSortedList.get(i);
+			int unfilteredIndex = filteredSortedList.get(index);
+			if (unfilteredIndex == -1) continue;
+			filteredSortedList.set(index, order);
 			order++;
 		}
 	}
@@ -239,6 +306,39 @@ public class FragmentUiPlugin extends Plugin
 
 	@Subscribe
 	public void onCommandExecuted(CommandExecuted e) {
+		if (e.getCommand().equals("fragmentresetsort")) {
+			customSort = new ArrayList<>(IntStream.range(0, 53).mapToObj(i -> i).collect(Collectors.toList()));
+			updateFilter(lastInput);
+			configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
+		}
+		if (e.getCommand().equals("fragmentalphasort")) {
+			List<Integer> fragmentOrder = new ArrayList<>(IntStream.range(0, 53).mapToObj(i -> i).collect(Collectors.toList()));
+			List<String> fragmentNames = new ArrayList<>();
+			for (Integer fragmentId : fragmentIdToStructId)
+			{
+				StructComposition structComposition = client.getStructComposition(fragmentId);
+				String name = structComposition.getStringValue(1448);
+				fragmentNames.add(name);
+			}
+			fragmentOrder.sort((i1, i2) -> {
+				String name1 = fragmentNames.get(i1);
+				String name2 = fragmentNames.get(i2);
+				return name1.compareTo(name2);
+			});
+			customSort = new ArrayList<>();
+			for (int i = 0; i < 53; i++)
+			{
+				customSort.add(-1);
+			}
+			int i = 0;
+			for (Integer integer : fragmentOrder)
+			{
+				customSort.set(integer, i);
+				i++;
+			}
+			updateFilter(lastInput);
+			configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
+		}
 		if (e.getCommand().equals("tagfragments")) {
 			if (e.getArguments().length == 0) return;
 
@@ -251,19 +351,31 @@ public class FragmentUiPlugin extends Plugin
 				relics.add("" + slotValue);
 			}
 //			log.info("" + relics);
-			configManager.setRSProfileConfiguration("fragmentsearch", "tag_" + tagName, String.join(" ", relics));
+			configManager.setConfiguration(GROUP_NAME, "tag_" + tagName, String.join(" ", relics));
 		}
 	}
+
+	private FragmentUiOverlay overlay = new FragmentUiOverlay();
+
+	@Inject
+	private ClientThread clientThread;
 
 	@Override
 	protected void startUp() throws Exception
 	{
-		overlayManager.add(new FragmentUiOverlay());
+		String sortConfig = configManager.getConfiguration(GROUP_NAME, "customsort");
+		if (sortConfig == null) customSort = new ArrayList<>(IntStream.range(0, 53).mapToObj(i -> i).collect(Collectors.toList()));
+		else {
+			customSort = new ArrayList<>(Arrays.asList(sortConfig.split(",")).stream().map(i -> Integer.parseInt(i)).collect(Collectors.toList()));
+			clientThread.invokeLater(() -> updateFilter(lastInput));
+		}
+		overlayManager.add(overlay);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
+		overlayManager.remove(overlay);
 	}
 
 	@Subscribe
@@ -358,65 +470,10 @@ public class FragmentUiPlugin extends Plugin
 	icons.put(3897, 13649); // Message In A Bottle
 	icons.put(3893, 11664); // Barbarian Pest Wars
 	icons.put(3894, 13646); // Rogues' Chompy Farm
-	icons.put(3873, 6887); // Mother's Magic Fossils
+	icons.put(3895, 6887); // Mother's Magic Fossils
 	}
 
-	Map<Integer, Integer> fragmentIdToStructId = new HashMap<>();
-	{
-	fragmentIdToStructId.put(1, 4038);
-	fragmentIdToStructId.put(2, 4041);
-	fragmentIdToStructId.put(3, 4039);
-	fragmentIdToStructId.put(4, 4042);
-	fragmentIdToStructId.put(5, 4040);
-	fragmentIdToStructId.put(6, 4043);
-	fragmentIdToStructId.put(7, 4054);
-	fragmentIdToStructId.put(8, 4037);
-	fragmentIdToStructId.put(9, 4053);
-	fragmentIdToStructId.put(10, 4061);
-	fragmentIdToStructId.put(11, 4047);
-	fragmentIdToStructId.put(12, 4048);
-	fragmentIdToStructId.put(13, 4089);
-	fragmentIdToStructId.put(14, 4045);
-	fragmentIdToStructId.put(15, 4046);
-	fragmentIdToStructId.put(16, 4044);
-	fragmentIdToStructId.put(17, 4083);
-	fragmentIdToStructId.put(18, 4084);
-	fragmentIdToStructId.put(19, 4085);
-	fragmentIdToStructId.put(20, 4086);
-	fragmentIdToStructId.put(21, 4049);
-	fragmentIdToStructId.put(22, 4058);
-	fragmentIdToStructId.put(23, 4051);
-	fragmentIdToStructId.put(24, 4052);
-	fragmentIdToStructId.put(25, 4050);
-	fragmentIdToStructId.put(26, 4055);
-	fragmentIdToStructId.put(27, 4056);
-	fragmentIdToStructId.put(28, 4057);
-	fragmentIdToStructId.put(29, 4059);
-	fragmentIdToStructId.put(30, 4060);
-	fragmentIdToStructId.put(31, 4073);
-	fragmentIdToStructId.put(32, 4077);
-	fragmentIdToStructId.put(33, 4078);
-	fragmentIdToStructId.put(34, 4072);
-	fragmentIdToStructId.put(35, 4067);
-	fragmentIdToStructId.put(36, 4068);
-	fragmentIdToStructId.put(37, 4064);
-	fragmentIdToStructId.put(38, 4065);
-	fragmentIdToStructId.put(39, 4074);
-	fragmentIdToStructId.put(40, 4066);
-	fragmentIdToStructId.put(41, 4079);
-	fragmentIdToStructId.put(42, 4080);
-	fragmentIdToStructId.put(43, 4087);
-	fragmentIdToStructId.put(44, 4088);
-	fragmentIdToStructId.put(45, 4062);
-	fragmentIdToStructId.put(46, 4063);
-	fragmentIdToStructId.put(47, 4075);
-	fragmentIdToStructId.put(48, 4076);
-	fragmentIdToStructId.put(49, 4081);
-	fragmentIdToStructId.put(50, 4082);
-	fragmentIdToStructId.put(51, 4069);
-	fragmentIdToStructId.put(52, 4070);
-	fragmentIdToStructId.put(53, 4071);
-	}
+	List<Integer> fragmentIdToStructId = Arrays.asList(new Integer[]{4038, 4041, 4039, 4042, 4040, 4043, 4054, 4037, 4053, 4061, 4047, 4048, 4089, 4045, 4046, 4044, 4083, 4084, 4085, 4086, 4049, 4058, 4051, 4052, 4050, 4055, 4056, 4057, 4059, 4060, 4073, 4077, 4078, 4072, 4067, 4068, 4064, 4065, 4074, 4066, 4079, 4080, 4087, 4088, 4062, 4063, 4075, 4076, 4081, 4082, 4069, 4070, 4071});
 
 	private class FragmentUiOverlay extends Overlay
 	{
@@ -438,7 +495,8 @@ public class FragmentUiPlugin extends Plugin
 				// <3 hydrox.
 				// 13400, where slot 6 would be, isn't the contents of slot 6!. Jank!
 				int slotValue = client.getVarbitValue(13395 + i + (i >= 5 ? 1 : 0));
-				Integer structId = fragmentIdToStructId.get(slotValue);
+				if (slotValue == 0) continue; // no relic in this slot.
+				Integer structId = fragmentIdToStructId.get(slotValue - 1);
 				if (structId == null) continue; // shouldn't happen.
 				StructComposition structComposition = client.getStructComposition(structId);
 				SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];
@@ -473,7 +531,7 @@ public class FragmentUiPlugin extends Plugin
 			for (int i = 0; i < widget.getDynamicChildren().length / 9; i++)
 			{
 				int fragmentId = i + 1;
-				Integer structId = fragmentIdToStructId.get(fragmentId);
+				Integer structId = fragmentIdToStructId.get(fragmentId - 1);
 				if (structId == null) continue; // shouldn't happen.
 				StructComposition structComposition = client.getStructComposition(structId);
 				SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];

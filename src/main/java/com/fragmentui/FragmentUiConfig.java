@@ -4,7 +4,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("fragmentui")
+@ConfigGroup(FragmentUiPlugin.GROUP_NAME)
 public interface FragmentUiConfig extends Config
 {
 	@ConfigItem(
@@ -15,7 +15,7 @@ public interface FragmentUiConfig extends Config
 	)
 	default String tutorial()
 	{
-		return "You can filter the fragment list by typing into the game's chatbox. You can search for fragment names or set effect names.";
+		return "=== Filtering ===\nYou can filter the fragment list by typing into the game's chatbox. You can search for fragment names or set effect names.\n\n=== Reordering ===\nYou can change the order of the list by dragging a fragment's icon onto another (you cannot drag fragments that are equipped, nor can you reorder it while the list is filtered, sorry). You can also revert your sort to the default with the \"::fragmentresetsort\" command, or set it to an alphabetical list with \"::fragmentalphasort\".";
 	}
 
 
