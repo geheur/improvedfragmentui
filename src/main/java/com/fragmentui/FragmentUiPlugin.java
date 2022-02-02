@@ -47,6 +47,8 @@ import net.runelite.client.util.AsyncBufferedImage;
 )
 public class FragmentUiPlugin extends Plugin
 {
+	public static final String GROUP_NAME = "improvedfragmentui";
+
 	@Inject
 	private Client client;
 
@@ -65,13 +67,7 @@ public class FragmentUiPlugin extends Plugin
 	@Inject
 	private SpriteManager spriteManager;
 
-	int order = 0;
-	Set<Integer> seenThisClientTick = new HashSet<>();
-	String lastInput = "";
-
-	public static final String GROUP_NAME = "improvedfragmentui";
-
-	Map<Integer, AsyncBufferedImage> setEffectImages = new HashMap<>();
+	private String lastInput = "";
 
 	@Subscribe
 	public void onClientTick(ClientTick e) {
