@@ -15,7 +15,7 @@ public interface FragmentUiConfig extends Config
 	)
 	default String tutorial()
 	{
-		return "=== Filtering ===\nYou can filter the fragment list by typing into the game's chatbox. You can search for fragment names or set effect names.\n\n=== Reordering ===\nYou can change the order of the list by dragging a fragment's icon onto another (you cannot drag fragments that are equipped, nor can you reorder it while the list is filtered, sorry). You can also revert your sort to the default with the \"::fragmentresetsort\" command, or set it to an alphabetical list with \"::fragmentalphasort\".";
+		return "=== Filtering ===\nYou can filter the fragment list by typing into the game's chatbox. You can search for fragment names or set effect names.\n\n=== Reordering ===\nYou can change the order of the list by dragging a fragment's icon onto another (you cannot drag fragments that are equipped, nor can you reorder it while the list is filtered, sorry). You can also revert your sort to the default with the \"::fragui sort reset\" command, or set it to an alphabetical list with \"::fragui sort alpha\".\n\n=== Presets ===\nYou can create a preset with \"::fragui preset presetName\", which will create a preset of your equipped fragments. When you search for exactly the name of the preset, the fragment list will be filtered to the fragments in that preset. You can delete a preset with \"::fragui delete presetName\". You can list presets with \"::fragui list\"";
 	}
 
 

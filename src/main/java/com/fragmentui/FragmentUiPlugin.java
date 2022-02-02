@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.Point;
@@ -75,31 +76,54 @@ public class FragmentUiPlugin extends Plugin
 	@Subscribe
 	public void onClientTick(ClientTick e) {
 		Widget equippedFragmentsWidget = client.getWidget(735, 35);
-		if (equippedFragmentsWidget == null || equippedFragmentsWidget.isHidden()) return;
-		if (config.changeFragmentIcons())
-		{
-			changeFragmentIcons(equippedFragmentsWidget);
+		if (equippedFragmentsWidget != null && !equippedFragmentsWidget.isHidden()) {
+			if (config.changeFragmentIcons())
+			{
+				changeFragmentIcons(equippedFragmentsWidget);
+			}
+			if (config.swapViewEquip()) swapViewEquip();
+			if (config.filterFragments()) filterFragments();
 		}
 
+//		Widget buffBar = client.getWidget(651, 4);
+//		int relicSlot = 0;
+//		for (int i = 0; i < buffBar.getDynamicChildren().length; i += 10)
+//		{
+//			int slotValue = client.getVarbitValue(13395 + relicSlot + (relicSlot >= 5 ? 1 : 0));
+//			relicSlot++;
+//			while (slotValue == 0) {
+//				slotValue = client.getVarbitValue(13395 + relicSlot + (relicSlot >= 5 ? 1 : 0));
+//				relicSlot++;
+//			}
+//
+//			buffBar.getDynamicChildren()[i * 10 + 5].setHidden(true);
+//			buffBar.getDynamicChildren()[i * 10 + 6].setItemId(1134);
+//			buffBar.getDynamicChildren()[i * 10 + 6].setItemQuantityMode(0);
+//			buffBar.getDynamicChildren()[i * 10 + 6].setSpriteId(-1);
+//		}
+	}
+
+	private void filterFragments()
+	{
+		String input = client.getVarcStrValue(335);
+		if (!input.equals(lastInput))
+		{
+			lastInput = input;
+			updateFilter(lastInput);
+			client.runScript(5751, 48168977, 48168978);
+		}
+//	client.runScript(5756, 48168968, 48168979, 48168969);
+	}
+
+	private void swapViewEquip()
+	{
 		MenuEntry[] entries = client.getMenuEntries();
-		if (config.swapViewEquip() && entries.length == 3 && entries[2].getOption().equals("View") && entries[1].getOption().equals("Equip")) {
+		if (entries.length == 3 && entries[2].getOption().equals("View")) {
 			MenuEntry menuEntry = entries[2];
 			entries[2] = entries[1];
 			entries[1] = menuEntry;
 		}
 		client.setMenuEntries(entries);
-
-		if (config.filterFragments())
-		{
-			String input = client.getVarcStrValue(335);
-			if (!input.equals(lastInput))
-			{
-				lastInput = input;
-				updateFilter(lastInput);
-				client.runScript(5751, 48168977, 48168978);
-			}
-		}
-//	client.runScript(5756, 48168968, 48168979, 48168969);
 	}
 
 	private void changeFragmentIcons(Widget equippedFragmentsWidget)
@@ -192,6 +216,7 @@ public class FragmentUiPlugin extends Plugin
 					widget.getDynamicChildren()[i + 2].setItemId(replacementItemId);
 				} else {
 					widget.getDynamicChildren()[i + 2].setSpriteId(replacementItemId * -1);
+					widget.getDynamicChildren()[i + 2].setSpriteTiling(false);
 				}
 				widget.getDynamicChildren()[i + 2].setItemQuantityMode(0);
 			}
@@ -246,7 +271,7 @@ public class FragmentUiPlugin extends Plugin
 	private void updateFilter(String input)
 	{
 		filteredSortedList.clear();
-		String relics = configManager.getConfiguration("fragmentsearch", "tag_" + input);
+		String relics = configManager.getConfiguration(GROUP_NAME, "tag_" + input);
 		outer:
 		for (int i = 0; i < customSort.size(); i++)
 		{
@@ -263,24 +288,17 @@ public class FragmentUiPlugin extends Plugin
 
 			if (relics != null) {
 				String[] relicIds = relics.split(" ");
-				boolean found = false;
 				for (int j = 0; j < relicIds.length; j++) {
-					// log.info(Integer.parseInt(relicIds[j]) + " " + (struct - 4038));
-					if (Integer.parseInt(relicIds[i]) == i + 1) {
+					if (Integer.parseInt(relicIds[j]) == i + 1) {
 						include = true;
 						break;
-					} else {
-						// do nothing;
 					}
 				}
-				if (!found) continue outer;
 			} else {
 				for (String word : words) {
 					if (name.toLowerCase().contains(word) || setEffect1Name.toLowerCase().contains(word) || setEffect2Name.toLowerCase().contains(word)) {
 						include = true;
 						break;
-					} else {
-						// do nothing;
 					}
 				}
 			}
@@ -304,56 +322,90 @@ public class FragmentUiPlugin extends Plugin
 		}
 	}
 
-
 	@Subscribe
 	public void onCommandExecuted(CommandExecuted e) {
-		if (e.getCommand().equals("fragmentresetsort")) {
-			customSort = new ArrayList<>(IntStream.range(0, 53).mapToObj(i -> i).collect(Collectors.toList()));
-			updateFilter(lastInput);
-			configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
+		if (e.getCommand().equals("fragui")) {
+			String[] arguments = e.getArguments();
+			if (arguments.length == 2 && arguments[0].equalsIgnoreCase("sort") && arguments[1].equalsIgnoreCase("alpha")) {
+				alphaSort();
+			}
+			if (arguments.length == 2 && arguments[0].equalsIgnoreCase("sort") && arguments[1].equalsIgnoreCase("reset")) {
+				customSort = new ArrayList<>(IntStream.range(0, 53).mapToObj(i -> i).collect(Collectors.toList()));
+				updateFilter(lastInput);
+				configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
+			}
+			if (arguments.length == 2 && (arguments[0].equalsIgnoreCase("set") || arguments[0].equalsIgnoreCase("preset") || arguments[0].equalsIgnoreCase("tag"))) {
+				tagFragments(arguments[1]);
+			}
+			if (arguments.length == 1 && arguments[0].equalsIgnoreCase("list")) {
+				listSets();
+			}
+			if (arguments.length == 2 && arguments[0].equalsIgnoreCase("delete")) {
+				deleteSet(arguments[1]);
+			}
 		}
-		if (e.getCommand().equals("fragmentalphasort")) {
-			List<Integer> fragmentOrder = new ArrayList<>(IntStream.range(0, 53).mapToObj(i -> i).collect(Collectors.toList()));
-			List<String> fragmentNames = new ArrayList<>();
-			for (Integer fragmentId : fragmentIdToStructId)
-			{
-				StructComposition structComposition = client.getStructComposition(fragmentId);
-				String name = structComposition.getStringValue(1448);
-				fragmentNames.add(name);
-			}
-			fragmentOrder.sort((i1, i2) -> {
-				String name1 = fragmentNames.get(i1);
-				String name2 = fragmentNames.get(i2);
-				return name1.compareTo(name2);
-			});
-			customSort = new ArrayList<>();
-			for (int i = 0; i < 53; i++)
-			{
-				customSort.add(-1);
-			}
-			int i = 0;
-			for (Integer integer : fragmentOrder)
-			{
-				customSort.set(integer, i);
-				i++;
-			}
-			updateFilter(lastInput);
-			configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
-		}
-		if (e.getCommand().equals("tagfragments")) {
-			if (e.getArguments().length == 0) return;
+	}
 
-			String tagName = e.getArguments()[0];
-			List<String> relics = new ArrayList<>();
-			for (int i = 0; i < 7; i++)
-			{
-				int slotValue = client.getVarbitValue(13395 + i);
-//				log.info("" + slotValue);
-				relics.add("" + slotValue);
-			}
-//			log.info("" + relics);
-			configManager.setConfiguration(GROUP_NAME, "tag_" + tagName, String.join(" ", relics));
+	private void listSets()
+	{
+		String message = "Fragment sets: ";
+		message += String.join(", ", configManager.getConfigurationKeys(GROUP_NAME + ".tag_").stream().map(s -> s.substring((GROUP_NAME + ".tag_").length())).collect(Collectors.toList()));
+		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "bla", message, "bla");
+	}
+
+	private void tagFragments(String tagName)
+	{
+		tagName = tagName.trim();
+		List<String> relics = new ArrayList<>();
+		for (int i = 0; i < 7; i++)
+		{
+			int slotValue = client.getVarbitValue(13395 + i + (i >= 5 ? 1 : 0));
+			relics.add("" + slotValue);
 		}
+		boolean modified = configManager.getConfiguration(GROUP_NAME, "tag_" + tagName) != null;
+		configManager.setConfiguration(GROUP_NAME, "tag_" + tagName, String.join(" ", relics));
+		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "bla", (modified ? "Modified" : "Added") + " set \"" + tagName + "\"", "bla");
+	}
+
+	private void deleteSet(String tagName)
+	{
+		boolean exists = configManager.getConfiguration(GROUP_NAME, "tag_" + tagName) != null;
+		if (!exists) {
+			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "bla", "Preset \"" + tagName + "\" does not exist.", "bla");
+			return;
+		}
+		configManager.unsetConfiguration(GROUP_NAME, "tag_" + tagName);
+		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "bla", "Deleted \"" + tagName + "\"", "bla");
+	}
+
+	private void alphaSort()
+	{
+		List<Integer> fragmentOrder = new ArrayList<>(IntStream.range(0, 53).mapToObj(i -> i).collect(Collectors.toList()));
+		List<String> fragmentNames = new ArrayList<>();
+		for (Integer fragmentId : fragmentIdToStructId)
+		{
+			StructComposition structComposition = client.getStructComposition(fragmentId);
+			String name = structComposition.getStringValue(1448);
+			fragmentNames.add(name);
+		}
+		fragmentOrder.sort((i1, i2) -> {
+			String name1 = fragmentNames.get(i1);
+			String name2 = fragmentNames.get(i2);
+			return name1.compareTo(name2);
+		});
+		customSort = new ArrayList<>();
+		for (int i = 0; i < 53; i++)
+		{
+			customSort.add(-1);
+		}
+		int i = 0;
+		for (Integer integer : fragmentOrder)
+		{
+			customSort.set(integer, i);
+			i++;
+		}
+		updateFilter(lastInput);
+		configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
 	}
 
 	private FragmentUiOverlay overlay = new FragmentUiOverlay();
@@ -471,7 +523,8 @@ public class FragmentUiPlugin extends Plugin
 	icons.put(3897, 13649); // Message In A Bottle
 	icons.put(3893, 11664); // Barbarian Pest Wars
 	icons.put(3894, 13646); // Rogues' Chompy Farm
-	icons.put(3895, 6887); // Mother's Magic Fossils
+		// This one shares an icon with catch of the day.
+//	icons.put(3913, 6887); // Mother's Magic Fossils
 	}
 
 	List<Integer> fragmentIdToStructId = Arrays.asList(new Integer[]{4038, 4041, 4039, 4042, 4040, 4043, 4054, 4037, 4053, 4061, 4047, 4048, 4089, 4045, 4046, 4044, 4083, 4084, 4085, 4086, 4049, 4058, 4051, 4052, 4050, 4055, 4056, 4057, 4059, 4060, 4073, 4077, 4078, 4072, 4067, 4068, 4064, 4065, 4074, 4066, 4079, 4080, 4087, 4088, 4062, 4063, 4075, 4076, 4081, 4082, 4069, 4070, 4071});
