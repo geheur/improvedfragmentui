@@ -240,17 +240,6 @@ public class FragmentUiPlugin extends Plugin
 //			}
 		}
 
-		if (e.getScriptId() == 5793) {
-			System.out.println("5793 1nd argument is " + client.getIntStack()[client.getIntStackSize() - 1]);
-			System.out.println("5793 2nd argument is " + client.getIntStack()[client.getIntStackSize() - 2]);
-			System.out.println("5793 3nd argument is " + client.getIntStack()[client.getIntStackSize() - 3]);
-			System.out.println("5793 4nd argument is " + client.getIntStack()[client.getIntStackSize() - 4]);
-			System.out.println("5793 5nd argument is " + client.getIntStack()[client.getIntStackSize() - 5]);
-			System.out.println("5793 6nd argument is " + client.getIntStack()[client.getIntStackSize() - 6]);
-			System.out.println("5793 7nd argument is " + client.getIntStack()[client.getIntStackSize() - 7]);
-//			client.getIntStack()[client.getIntStackSize() - 3] = 4;
-		}
-
 		if (e.getScriptId() == 5752 && config.filterFragments()) {
 			int struct = client.getIntStack()[client.getIntStackSize() - 2];
 
@@ -261,9 +250,7 @@ public class FragmentUiPlugin extends Plugin
 			client.getIntStack()[client.getIntStackSize() - 1] = order == -1 ? 1 : 0;
 			if (order != -1) client.getIntStack()[client.getIntStackSize() - 3] = order;
 
-			String name = structComposition.getStringValue(1448);
-			System.out.println("name is " + fragmentId + " " + name);
-			System.out.println(structComposition.getIntValue(1461));
+//			String name = structComposition.getStringValue(1448);
 //			SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];
 //			SetEffect setEffect2 = SetEffect.values()[structComposition.getIntValue(1460) - 1];
 //			String setEffect1Name = setEffect1.name;
