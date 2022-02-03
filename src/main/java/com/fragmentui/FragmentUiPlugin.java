@@ -25,6 +25,7 @@ import net.runelite.api.StructComposition;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -39,7 +40,6 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.util.AsyncBufferedImage;
 
 @Slf4j
 @PluginDescriptor(
@@ -79,6 +79,11 @@ public class FragmentUiPlugin extends Plugin
 			}
 			if (config.swapViewEquip()) swapViewEquip();
 			if (config.filterFragments()) filterFragments();
+			for (int i = 0; i < equippedFragmentsWidget.getDynamicChildren().length; i += 6)
+			{
+				Widget fragmentSymbol = equippedFragmentsWidget.getDynamicChildren()[i + 1];
+				fragmentSymbol.setDragDeadTime(10);
+			}
 		}
 
 //		Widget buffBar = client.getWidget(651, 4);
@@ -226,13 +231,24 @@ public class FragmentUiPlugin extends Plugin
 	}
 
 	@Subscribe
-		public void onScriptPreFired(ScriptPreFired e) {
+	public void onScriptPreFired(ScriptPreFired e) {
 		if (e.getScriptId() == 5756 || e.getScriptId() == 5751) {
 //			log.info("logging " + e.getScriptId());
 //			for (int i = 0; i < client.getIntStackSize(); i++)
 //			{
 //				log.info(i + " " + "" + client.getIntStack()[i]);
 //			}
+		}
+
+		if (e.getScriptId() == 5793) {
+			System.out.println("5793 1nd argument is " + client.getIntStack()[client.getIntStackSize() - 1]);
+			System.out.println("5793 2nd argument is " + client.getIntStack()[client.getIntStackSize() - 2]);
+			System.out.println("5793 3nd argument is " + client.getIntStack()[client.getIntStackSize() - 3]);
+			System.out.println("5793 4nd argument is " + client.getIntStack()[client.getIntStackSize() - 4]);
+			System.out.println("5793 5nd argument is " + client.getIntStack()[client.getIntStackSize() - 5]);
+			System.out.println("5793 6nd argument is " + client.getIntStack()[client.getIntStackSize() - 6]);
+			System.out.println("5793 7nd argument is " + client.getIntStack()[client.getIntStackSize() - 7]);
+//			client.getIntStack()[client.getIntStackSize() - 3] = 4;
 		}
 
 		if (e.getScriptId() == 5752 && config.filterFragments()) {
@@ -245,7 +261,9 @@ public class FragmentUiPlugin extends Plugin
 			client.getIntStack()[client.getIntStackSize() - 1] = order == -1 ? 1 : 0;
 			if (order != -1) client.getIntStack()[client.getIntStackSize() - 3] = order;
 
-//			String name = structComposition.getStringValue(1448);
+			String name = structComposition.getStringValue(1448);
+			System.out.println("name is " + fragmentId + " " + name);
+			System.out.println(structComposition.getIntValue(1461));
 //			SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];
 //			SetEffect setEffect2 = SetEffect.values()[structComposition.getIntValue(1460) - 1];
 //			String setEffect1Name = setEffect1.name;
@@ -613,6 +631,15 @@ public class FragmentUiPlugin extends Plugin
 				}
 			}
 			return null;
+		}
+	}
+
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded e) {
+		// ty memebeams!
+		if (config.swapViewEquip() && e.getOption().equals("View") && client.getWidget(735, 35) != null && !client.getWidget(735, 35).isHidden()) {
+			MenuEntry[] entries = client.getMenuEntries();
+			client.setMenuEntries(Arrays.copyOf(entries, entries.length - 1));
 		}
 	}
 }

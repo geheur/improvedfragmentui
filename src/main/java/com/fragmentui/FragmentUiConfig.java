@@ -43,8 +43,8 @@ public interface FragmentUiConfig extends Config
 
 	@ConfigItem(
 		keyName = "swapViewEquip",
-		name = "Swap Equip",
-		description = "Swaps Equip for fragments in the list. Unfortunately, swapping Unequip isn't possible.",
+		name = "Swap (Un)Equip",
+		description = "Swaps Equip and Unequip for fragments in the list.",
 		position = 3
 	)
 	default boolean swapViewEquip()
