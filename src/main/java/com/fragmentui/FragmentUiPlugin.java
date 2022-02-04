@@ -624,9 +624,12 @@ public class FragmentUiPlugin extends Plugin
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded e) {
 		// ty memebeams!
-		if (config.swapViewEquip() && e.getOption().equals("View") && client.getWidget(735, 35) != null && !client.getWidget(735, 35).isHidden()) {
-			MenuEntry[] entries = client.getMenuEntries();
-			client.setMenuEntries(Arrays.copyOf(entries, entries.length - 1));
+		MenuEntry[] entries = client.getMenuEntries();
+		if (config.swapViewEquip() && entries.length == 3 && e.getOption().equals("View") && client.getWidget(735, 35) != null && !client.getWidget(735, 35).isHidden()) {
+			MenuEntry entry = entries[1];
+			entries[1] = entries[2];
+			entries[2] = entry;
+			client.setMenuEntries(entries);
 		}
 	}
 }
