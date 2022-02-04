@@ -9,10 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
@@ -77,7 +75,6 @@ public class FragmentUiPlugin extends Plugin
 			{
 				changeFragmentIcons(equippedFragmentsWidget);
 			}
-			if (config.swapViewEquip()) swapViewEquip();
 			if (config.filterFragments()) filterFragments();
 			for (int i = 0; i < equippedFragmentsWidget.getDynamicChildren().length; i += 6)
 			{
@@ -96,17 +93,6 @@ public class FragmentUiPlugin extends Plugin
 			updateFilter(lastInput);
 			client.runScript(5751, 48168977, 48168978);
 		}
-	}
-
-	private void swapViewEquip()
-	{
-		MenuEntry[] entries = client.getMenuEntries();
-		if (entries.length == 3 && entries[2].getOption().equals("View")) {
-			MenuEntry menuEntry = entries[2];
-			entries[2] = entries[1];
-			entries[1] = menuEntry;
-		}
-		client.setMenuEntries(entries);
 	}
 
 	private void changeFragmentIcons(Widget equippedFragmentsWidget)
