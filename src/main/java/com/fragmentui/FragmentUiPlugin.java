@@ -85,23 +85,6 @@ public class FragmentUiPlugin extends Plugin
 				fragmentSymbol.setDragDeadTime(10);
 			}
 		}
-
-//		Widget buffBar = client.getWidget(651, 4);
-//		int relicSlot = 0;
-//		for (int i = 0; i < buffBar.getDynamicChildren().length; i += 10)
-//		{
-//			int slotValue = client.getVarbitValue(13395 + relicSlot + (relicSlot >= 5 ? 1 : 0));
-//			relicSlot++;
-//			while (slotValue == 0) {
-//				slotValue = client.getVarbitValue(13395 + relicSlot + (relicSlot >= 5 ? 1 : 0));
-//				relicSlot++;
-//			}
-//
-//			buffBar.getDynamicChildren()[i * 10 + 5].setHidden(true);
-//			buffBar.getDynamicChildren()[i * 10 + 6].setItemId(1134);
-//			buffBar.getDynamicChildren()[i * 10 + 6].setItemQuantityMode(0);
-//			buffBar.getDynamicChildren()[i * 10 + 6].setSpriteId(-1);
-//		}
 	}
 
 	private void filterFragments()
@@ -113,7 +96,6 @@ public class FragmentUiPlugin extends Plugin
 			updateFilter(lastInput);
 			client.runScript(5751, 48168977, 48168978);
 		}
-//	client.runScript(5756, 48168968, 48168979, 48168969);
 	}
 
 	private void swapViewEquip()
@@ -145,9 +127,7 @@ public class FragmentUiPlugin extends Plugin
 				}
 				fragmentSymbol.setSpriteId(-1);
 				equippedFragmentsWidget.getDynamicChildren()[i + 0].setSpriteId(-1);
-				equippedFragmentsWidget.getDynamicChildren()[i + 0].setText("LAKJSDLAJSKDLAKSDJALS");
 				equippedFragmentsWidget.getDynamicChildren()[i + 3].setSpriteId(-1);
-				equippedFragmentsWidget.getDynamicChildren()[i + 3].setText("LAKJSDLAJSKDLAKSDJALS");
 			}
 		}
 
@@ -156,7 +136,6 @@ public class FragmentUiPlugin extends Plugin
 
 		for (int i = 0; i < widget.getDynamicChildren().length; i += 9)
 		{
-			// log.info("{} {} {} {} {} {} {} {} {} {} {} {} {} {}", i, widget.getDynamicChildren()[i + 7].getText(), widget.getDynamicChildren()[i + 1].getSpriteId(), widget.getDynamicChildren()[i + 1].getSpriteId(), widget.getDynamicChildren()[i + 2].getSpriteId(), widget.getDynamicChildren()[i + 3].getSpriteId(), widget.getDynamicChildren()[i + 4].getSpriteId(), widget.getDynamicChildren()[i + 3].getSpriteId(), widget.getDynamicChildren()[i + 6].getSpriteId());
 			int symbolId = widget.getDynamicChildren()[i + 3].getSpriteId();
 			int finalI = i;
 			widget.getDynamicChildren()[i + 2].setOnDragCompleteListener((JavaScriptCallback) e -> {
@@ -166,21 +145,11 @@ public class FragmentUiPlugin extends Plugin
 				int scrollY = widget.getScrollY();
 				int fragmentIdDraggedOn = (mouseCanvasPosition.getY() - widget.getCanvasLocation().getY() + scrollY) / 42;
 				int fragmentIdDragged = customSort.get(finalI / 9);
-				// the dragged id must be converted to an index into the custom list, just like the dragged on id is;
-//				for (int i1 = 0; i1 < customSort.size(); i1++)
-//				{
-//					if (customSort.get(i1) == fragmentIdDragged) {
-//						fragmentIdDragged = i1;
-//						break;
-//					}
-//				}
-//				System.out.println("doing swap: " + customSort);
 				int[] reverseCustomSort = new int[53];
 				for (int i1 = 0; i1 < customSort.size(); i1++)
 				{
 					reverseCustomSort[customSort.get(i1)] = i1;
 				}
-//				System.out.println("pre swap (reversed): " + Arrays.asList(reverseCustomSort));
 				int swap = reverseCustomSort[fragmentIdDragged];
 				if (fragmentIdDragged > fragmentIdDraggedOn) {
 					for (int i2 = fragmentIdDragged; i2 > fragmentIdDraggedOn; i2--)
@@ -194,7 +163,6 @@ public class FragmentUiPlugin extends Plugin
 					}
 				}
 				reverseCustomSort[fragmentIdDraggedOn] = swap;
-//				System.out.println("post swap (reversed): " + Arrays.asList(reverseCustomSort));
 				for (int i1 = 0; i1 < reverseCustomSort.length; i1++)
 				{
 					customSort.set(reverseCustomSort[i1], i1);
@@ -202,9 +170,6 @@ public class FragmentUiPlugin extends Plugin
 				updateFilter(lastInput);
 				configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
 				client.runScript(5751, 48168977, 48168978);
-//				System.out.println("done swap: " + customSort);
-//				System.out.println(fragmentIdDraggedOn + " " + fragmentIdDragged);
-//				System.out.println("scrollheight: " + widget.getScrollHeight());
 			});
 			Integer replacementItemId = icons.get(symbolId);
 			if (replacementItemId != null) {
@@ -232,14 +197,6 @@ public class FragmentUiPlugin extends Plugin
 
 	@Subscribe
 	public void onScriptPreFired(ScriptPreFired e) {
-		if (e.getScriptId() == 5756 || e.getScriptId() == 5751) {
-//			log.info("logging " + e.getScriptId());
-//			for (int i = 0; i < client.getIntStackSize(); i++)
-//			{
-//				log.info(i + " " + "" + client.getIntStack()[i]);
-//			}
-		}
-
 		if (e.getScriptId() == 5752 && config.filterFragments()) {
 			int struct = client.getIntStack()[client.getIntStackSize() - 2];
 
@@ -249,21 +206,6 @@ public class FragmentUiPlugin extends Plugin
 			int order = getOrder(fragmentId);
 			client.getIntStack()[client.getIntStackSize() - 1] = order == -1 ? 1 : 0;
 			if (order != -1) client.getIntStack()[client.getIntStackSize() - 3] = order;
-
-//			String name = structComposition.getStringValue(1448);
-//			SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];
-//			SetEffect setEffect2 = SetEffect.values()[structComposition.getIntValue(1460) - 1];
-//			String setEffect1Name = setEffect1.name;
-//			String setEffect2Name = setEffect2.name;
-//			int originalListPosition = client.getIntStack()[client.getIntStackSize() - 3];
-//			log.info("{}: ({}, {}), {} {} {} {} {} {} {}", name, setEffect1Name, setEffect2Name,
-//				client.getIntStack()[client.getIntStackSize() - 1],
-//				struct,
-//				originalListPosition,
-//				client.getIntStack()[client.getIntStackSize() - 4],
-//				client.getIntStack()[client.getIntStackSize() - 5],
-//				structComposition.getIntValue(1455)
-//			);
 		}
 	}
 
