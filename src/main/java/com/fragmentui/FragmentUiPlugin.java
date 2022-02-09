@@ -69,7 +69,7 @@ public class FragmentUiPlugin extends Plugin
 
 	@Subscribe
 	public void onClientTick(ClientTick e) {
-		Widget equippedFragmentsWidget = client.getWidget(735, 35);
+		Widget equippedFragmentsWidget = client.getWidget(735, 36);
 		if (equippedFragmentsWidget != null && !equippedFragmentsWidget.isHidden()) {
 			if (config.changeFragmentIcons())
 			{
@@ -117,7 +117,7 @@ public class FragmentUiPlugin extends Plugin
 			}
 		}
 
-		Widget widget = client.getWidget(735, 17);
+		Widget widget = client.getWidget(735, 18);
 		if (widget == null || widget.isHidden()) return;
 
 		for (int i = 0; i < widget.getDynamicChildren().length; i += 9)
@@ -470,7 +470,7 @@ public class FragmentUiPlugin extends Plugin
 		{
 			if (!config.showSetEffectIcons()) return null;
 
-			Widget equippedFragmentsWidget = client.getWidget(735, 35);
+			Widget equippedFragmentsWidget = client.getWidget(735, 36);
 			if (equippedFragmentsWidget == null || equippedFragmentsWidget.isHidden()) return null;
 //				log.info("length: " + equippedFragmentsWidget.getDynamicChildren().length);
 			for (int i = 0; i < equippedFragmentsWidget.getDynamicChildren().length / 6; i++)
@@ -508,7 +508,7 @@ public class FragmentUiPlugin extends Plugin
 				}
 
 			}
-			Widget widget = client.getWidget(735, 17);
+			Widget widget = client.getWidget(735, 18);
 			if (widget == null || widget.isHidden()) return null;
 
 			for (int i = 0; i < widget.getDynamicChildren().length / 9; i++)
@@ -520,7 +520,7 @@ public class FragmentUiPlugin extends Plugin
 				SetEffect setEffect1 = SetEffect.values()[structComposition.getIntValue(1459) - 1];
 				SetEffect setEffect2 = SetEffect.values()[structComposition.getIntValue(1460) - 1];
 
-				Rectangle bounds = client.getWidget(735, 16).getBounds();
+				Rectangle bounds = client.getWidget(735, 18).getBounds();
 				graphics.setClip((int) bounds.getX(), (int) bounds.getY() - 0, (int) bounds.getWidth(), (int) bounds.getHeight());
 				// graphics.drawRect((int) bounds.getX(), (int) bounds.getY() - 88, (int) bounds.getWidth(), (int) bounds.getHeight());
 
@@ -553,7 +553,7 @@ public class FragmentUiPlugin extends Plugin
 	public void onMenuEntryAdded(MenuEntryAdded e) {
 		// ty memebeams!
 		MenuEntry[] entries = client.getMenuEntries();
-		if (config.swapViewEquip() && entries.length == 3 && e.getOption().equals("View") && client.getWidget(735, 35) != null && !client.getWidget(735, 35).isHidden()) {
+		if (config.swapViewEquip() && entries.length == 3 && e.getOption().equals("View") && client.getWidget(735, 36) != null && !client.getWidget(735, 36).isHidden()) {
 			MenuEntry entry = entries[1];
 			entries[1] = entries[2];
 			entries[2] = entry;
