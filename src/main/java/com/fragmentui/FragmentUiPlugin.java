@@ -27,6 +27,7 @@ import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -91,7 +92,7 @@ public class FragmentUiPlugin extends Plugin
 		{
 			lastInput = input;
 			updateFilter(lastInput);
-			client.runScript(5751, 48168977, 48168978);
+			client.runScript(5751, WidgetInfo.PACK(735, 18), WidgetInfo.PACK(735, 19));
 		}
 	}
 
@@ -155,7 +156,7 @@ public class FragmentUiPlugin extends Plugin
 				}
 				updateFilter(lastInput);
 				configManager.setConfiguration(GROUP_NAME, "customsort", String.join(",", customSort.stream().map(s -> "" + s).collect(Collectors.toList())));
-				client.runScript(5751, 48168977, 48168978);
+				client.runScript(5751, WidgetInfo.PACK(735, 18), WidgetInfo.PACK(735, 19));
 			});
 			Integer replacementItemId = icons.get(symbolId);
 			if (replacementItemId != null) {
